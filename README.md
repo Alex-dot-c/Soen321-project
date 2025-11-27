@@ -44,6 +44,15 @@ The workflow is organized into four independent steps:
 - scikit-learn
 - matplotlib
 
+## Platform Notes
+
+**Mac/Linux users:** Use `python3` and `pip3` commands
+**Windows users:** Use `python` and `pip` commands
+
+Throughout this guide:
+- 🍎 Mac/Linux commands are shown first
+- 🪟 Windows commands are shown below (when different)
+
 ## Installation
 
 ### 1. Clone the repository
@@ -53,18 +62,40 @@ cd Soen-proj
 ```
 
 ### 2. Create a virtual environment (recommended)
+
+**Mac/Linux:**
 ```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+**Windows:**
+```cmd
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+venv\Scripts\activate
 ```
 
 ### 3. Install dependencies
+
+**Mac/Linux:**
 ```bash
+pip3 install torch torchvision numpy scikit-learn matplotlib
+```
+
+**Windows:**
+```cmd
 pip install torch torchvision numpy scikit-learn matplotlib
 ```
 
-Or create a `requirements.txt`:
+Or use requirements.txt:
+
+**Mac/Linux:**
 ```bash
+pip3 install -r requirements.txt
+```
+
+**Windows:**
+```cmd
 pip install -r requirements.txt
 ```
 
@@ -72,7 +103,23 @@ pip install -r requirements.txt
 
 Run the complete workflow with default settings:
 
+**Mac/Linux:**
 ```bash
+# Step 0: Prepare dataset (first time only)
+python3 step0_project_setup.py
+
+# Step 1: Train a model
+python3 step1_train.py --depth original --kernel 3 --epochs 10
+
+# Step 2: Test the model
+python3 step2_test.py --model outputs/vgg_original_k3.pt --depth original --kernel 3
+
+# Step 3: Attack the model
+python3 step3_attack.py --model outputs/vgg_original_k3.pt --depth original --kernel 3
+```
+
+**Windows:**
+```cmd
 # Step 0: Prepare dataset (first time only)
 python step0_project_setup.py
 
@@ -92,7 +139,13 @@ python step3_attack.py --model outputs/vgg_original_k3.pt --depth original --ker
 
 **Purpose**: Download CIFAR-10 and extract a subset for training and testing.
 
+**Mac/Linux:**
 ```bash
+python3 step0_project_setup.py
+```
+
+**Windows:**
+```cmd
 python step0_project_setup.py
 ```
 
@@ -110,7 +163,13 @@ python step0_project_setup.py
 
 **Purpose**: Train a VGG model and save the best checkpoint.
 
+**Mac/Linux:**
 ```bash
+python3 step1_train.py [OPTIONS]
+```
+
+**Windows:**
+```cmd
 python step1_train.py [OPTIONS]
 ```
 
@@ -119,17 +178,34 @@ python step1_train.py [OPTIONS]
 |--------|---------|-------------|
 | `--depth` | `original` | Architecture: `shallow`, `original`, or `deep` |
 | `--kernel` | `3` | Convolution kernel size (3, 5, 7, etc.) |
-| `--epochs` | `40` | Number of training epochs |
+| `--epochs` | `10` | Number of training epochs |
 | `--lr` | `0.01` | Learning rate |
 | `--batch` | `64` | Batch size |
 
-**Examples**:
+**Examples:**
+
+**Mac/Linux:**
 ```bash
-# Train original VGG with kernel size 3
-python step1_train.py --depth original --kernel 3 --epochs 40
+# Train original VGG with kernel size 3 (default 10 epochs)
+python3 step1_train.py --depth original --kernel 3
 
 # Train shallow model with larger kernels
-python step1_train.py --depth shallow --kernel 5 --epochs 30
+python3 step1_train.py --depth shallow --kernel 5
+
+# Train deep architecture with more epochs for better convergence
+python3 step1_train.py --depth deep --kernel 3 --epochs 20
+```
+
+**Windows:**
+```cmd
+# Train original VGG with kernel size 3 (default 10 epochs)
+python step1_train.py --depth original --kernel 3
+
+# Train shallow model with larger kernels
+python step1_train.py --depth shallow --kernel 5
+
+# Train deep architecture with more epochs for better convergence
+python step1_train.py --depth deep --kernel 3 --epochs 20
 
 # Train deep model with more epochs
 python step1_train.py --depth deep --epochs 60 --lr 0.001
@@ -145,7 +221,13 @@ python step1_train.py --depth deep --epochs 60 --lr 0.001
 
 **Purpose**: Evaluate a trained model on the test set.
 
+**Mac/Linux:**
 ```bash
+python3 step2_test.py --model <path-to-model> [OPTIONS]
+```
+
+**Windows:**
+```cmd
 python step2_test.py --model <path-to-model> [OPTIONS]
 ```
 
@@ -159,9 +241,24 @@ python step2_test.py --model <path-to-model> [OPTIONS]
 | `--kernel` | `3` | Must match training kernel size |
 | `--batch` | `64` | Batch size for evaluation |
 
-**Example**:
+**Examples:**
+
+**Mac/Linux:**
 ```bash
+# Test the trained original model
+python3 step2_test.py --model outputs/vgg_original_k3.pt --depth original --kernel 3
+
+# Test a shallow model with kernel size 5
+python3 step2_test.py --model outputs/vgg_shallow_k5.pt --depth shallow --kernel 5
+```
+
+**Windows:**
+```cmd
+# Test the trained original model
 python step2_test.py --model outputs/vgg_original_k3.pt --depth original --kernel 3
+
+# Test a shallow model with kernel size 5
+python step2_test.py --model outputs/vgg_shallow_k5.pt --depth shallow --kernel 5
 ```
 
 **Outputs**:
@@ -174,7 +271,13 @@ python step2_test.py --model outputs/vgg_original_k3.pt --depth original --kerne
 
 **Purpose**: Evaluate model robustness against FGSM attacks.
 
+**Mac/Linux:**
 ```bash
+python3 step3_attack.py --model <path-to-model> [OPTIONS]
+```
+
+**Windows:**
+```cmd
 python step3_attack.py --model <path-to-model> [OPTIONS]
 ```
 
@@ -191,8 +294,26 @@ python step3_attack.py --model <path-to-model> [OPTIONS]
 | `--seed` | `None` | Random seed for reproducibility |
 | `--shuffle` | `False` | Shuffle test data for different examples |
 
-**Examples**:
+**Examples:**
+
+**Mac/Linux:**
 ```bash
+# Standard attack (random examples each run)
+python3 step3_attack.py --model outputs/vgg_original_k3.pt --depth original --kernel 3
+
+# Reproducible results with seed
+python3 step3_attack.py --model outputs/vgg_original_k3.pt --depth original --kernel 3 --seed 42
+
+# Shuffle data to see different examples each run
+python3 step3_attack.py --model outputs/vgg_original_k3.pt --depth original --kernel 3 --shuffle
+
+# Custom epsilon values
+python3 step3_attack.py --model outputs/vgg_deep_k3.pt --depth deep --kernel 3 \
+  --epsilons "0.0,0.005,0.01,0.02,0.05,0.1"
+```
+
+**Windows:**
+```cmd
 # Standard attack (random examples each run)
 python step3_attack.py --model outputs/vgg_original_k3.pt --depth original --kernel 3
 
@@ -202,9 +323,8 @@ python step3_attack.py --model outputs/vgg_original_k3.pt --depth original --ker
 # Shuffle data to see different examples each run
 python step3_attack.py --model outputs/vgg_original_k3.pt --depth original --kernel 3 --shuffle
 
-# Custom epsilon values
-python step3_attack.py --model outputs/vgg_deep_k3.pt --depth deep --kernel 3 \
-  --epsilons "0.0,0.005,0.01,0.02,0.05,0.1"
+# Custom epsilon values (note: use ^ for line continuation in cmd)
+python step3_attack.py --model outputs/vgg_deep_k3.pt --depth deep --kernel 3 --epsilons "0.0,0.005,0.01,0.02,0.05,0.1"
 ```
 
 **Getting Different Results Each Run**:
@@ -286,21 +406,45 @@ After running the complete workflow, you'll get:
 
 ### Issue: "No module named 'torch'"
 **Solution**: Install PyTorch
+
+**Mac/Linux:**
 ```bash
+pip3 install torch torchvision
+```
+
+**Windows:**
+```cmd
 pip install torch torchvision
 ```
 
 ### Issue: "CUDA out of memory"
 **Solution**: Reduce batch size
+
+**Mac/Linux:**
 ```bash
-python step1_train.py --batch 32  # or even 16
+python3 step1_train.py --batch 32  # or even 16
+```
+
+**Windows:**
+```cmd
+python step1_train.py --batch 32
 ```
 
 ### Issue: "Model file not found"
 **Solution**: Make sure you've run step1 first and use the correct path
+
+**Mac/Linux:**
 ```bash
 # Check what models exist
 ls outputs/*.pt
+# Use the correct path
+python3 step2_test.py --model outputs/vgg_original_k3.pt --depth original --kernel 3
+```
+
+**Windows:**
+```cmd
+# Check what models exist
+dir outputs\*.pt
 # Use the correct path
 python step2_test.py --model outputs/vgg_original_k3.pt --depth original --kernel 3
 ```

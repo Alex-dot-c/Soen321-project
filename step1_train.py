@@ -225,7 +225,7 @@ def train_model(epochs=40, lr=0.01, k=3, depth="original", batch=64):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Train VGG-style CNN on CIFAR-10")
-    ap.add_argument("--epochs", type=int, default=40, help="Number of training epochs")
+    ap.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
     ap.add_argument("--lr", type=float, default=0.01, help="Learning rate")
     ap.add_argument("--kernel", type=int, default=3, help="Convolution kernel size")
     ap.add_argument("--depth", type=str, default="original",
