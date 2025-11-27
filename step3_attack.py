@@ -5,6 +5,7 @@ Produces adversarial accuracy curves and example visualizations.
 """
 import argparse
 import numpy as np
+import random
 from pathlib import Path
 import torch
 import torch.nn as nn
@@ -14,13 +15,13 @@ from torchvision.datasets import ImageFolder
 import matplotlib.pyplot as plt
 
 
-def get_test_loader(root_test="./test_images", batch=64):
+def get_test_loader(root_test="./test_images", batch=64, shuffle=False):
     """Load test data with CIFAR-10 normalization."""
     mean, std = (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)
     tf_test = T.Compose([T.ToTensor(), T.Normalize(mean, std)])
     ds_te = ImageFolder(root_test, transform=tf_test)
     classes = ds_te.classes
-    ld_te = DataLoader(ds_te, batch_size=batch, shuffle=False, num_workers=0)
+    ld_te = DataLoader(ds_te, batch_size=batch, shuffle=shuffle, num_workers=0)
     return ld_te, classes
 
 
@@ -129,10 +130,13 @@ class VGG_Deep(nn.Module):
         return self.classifier(self.features(x))
 
 
-def fgsm_attack(model, device, data_loader, epsilon: float, classes):
+def fgsm_attack(model, device, data_loader, epsilon: float, classes, visualize_batch=None):
     """
     Perform FGSM attack and return adversarial accuracy.
     Also returns some example adversarial images for visualization.
+
+    Args:
+        visualize_batch: Which batch to visualize (None = random, 0 = first batch, etc.)
     """
     crit = nn.CrossEntropyLoss()
     model.eval()
@@ -140,9 +144,13 @@ def fgsm_attack(model, device, data_loader, epsilon: float, classes):
     correct = 0
     total = 0
 
-    # Store examples for visualization (first batch only)
+    # Store examples for visualization
     examples_stored = False
     example_data = None
+
+    # Randomly select a batch to visualize if not specified
+    if visualize_batch is None:
+        visualize_batch = random.randint(0, len(data_loader) - 1)
 
     for batch_idx, (x, y) in enumerate(data_loader):
         x, y = x.to(device), y.to(device)
@@ -169,8 +177,8 @@ def fgsm_attack(model, device, data_loader, epsilon: float, classes):
         correct += (pred_adv == y).sum().item()
         total += y.size(0)
 
-        # Store first batch for visualization
-        if not examples_stored and batch_idx == 0:
+        # Store selected batch for visualization
+        if not examples_stored and batch_idx == visualize_batch:
             # Get original predictions
             with torch.no_grad():
                 outputs_orig = model(x)
@@ -244,10 +252,21 @@ def visualize_attack_examples(example_data, save_path):
 
 
 def attack_model(model_path, k=3, depth="original", batch=64,
-                epsilons=None):
+                epsilons=None, seed=None, shuffle=False):
     """Load model and perform FGSM attacks with different epsilon values."""
     if epsilons is None:
         epsilons = [0.0, 0.01, 0.03, 0.05, 0.1]
+
+    # Set random seed for reproducibility
+    if seed is not None:
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed(seed)
+        print(f"Random seed set to: {seed}")
+    else:
+        print("Random seed: Not set (results will vary each run)")
 
     # Setup device
     device = ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
@@ -260,9 +279,10 @@ def attack_model(model_path, k=3, depth="original", batch=64,
 
     # Load test data
     print("\nLoading test data...")
-    test_loader, classes = get_test_loader(batch=batch)
+    test_loader, classes = get_test_loader(batch=batch, shuffle=shuffle)
     print(f"Test samples: {len(test_loader.dataset)}")
     print(f"Classes: {classes}")
+    print(f"Shuffle: {shuffle} (different examples each run: {shuffle or seed is None})")
 
     # Initialize model architecture
     if depth == "shallow":
@@ -293,7 +313,9 @@ def attack_model(model_path, k=3, depth="original", batch=64,
 
     for eps in epsilons:
         print(f"Running FGSM attack with ε = {eps:.3f}...", end=" ")
-        adv_acc, examples = fgsm_attack(model, device, test_loader, eps, classes)
+        # Use different random batch for each epsilon if no seed is set
+        vis_batch = None if seed is None else 0
+        adv_acc, examples = fgsm_attack(model, device, test_loader, eps, classes, visualize_batch=vis_batch)
         adv_accs.append(adv_acc)
         all_examples.append(examples)
         print(f"Accuracy: {adv_acc:.4f}")
@@ -367,6 +389,10 @@ if __name__ == "__main__":
                     help="Batch size for evaluation")
     ap.add_argument("--epsilons", type=str, default="0.0,0.01,0.03,0.05,0.1",
                     help="Comma-separated epsilon values for FGSM attack")
+    ap.add_argument("--seed", type=int, default=None,
+                    help="Random seed for reproducibility (default: None, random each run)")
+    ap.add_argument("--shuffle", action="store_true",
+                    help="Shuffle test data (shows different examples each run)")
     args = ap.parse_args()
 
     print("=" * 60)
@@ -385,4 +411,4 @@ if __name__ == "__main__":
     epsilons = [float(e.strip()) for e in args.epsilons.split(',')]
 
     attack_model(model_path, k=args.kernel, depth=args.depth,
-                batch=args.batch, epsilons=epsilons)
+                batch=args.batch, epsilons=epsilons, seed=args.seed, shuffle=args.shuffle)

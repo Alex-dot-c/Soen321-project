@@ -77,7 +77,7 @@ Run the complete workflow with default settings:
 python step0_project_setup.py
 
 # Step 1: Train a model
-python step1_train.py --depth original --kernel 3 --epochs 40
+python step1_train.py --depth original --kernel 3 --epochs 10
 
 # Step 2: Test the model
 python step2_test.py --model outputs/vgg_original_k3.pt --depth original --kernel 3
@@ -188,16 +188,29 @@ python step3_attack.py --model <path-to-model> [OPTIONS]
 | `--kernel` | `3` | Must match training kernel size |
 | `--batch` | `64` | Batch size for evaluation |
 | `--epsilons` | `0.0,0.01,0.03,0.05,0.1` | Comma-separated epsilon values |
+| `--seed` | `None` | Random seed for reproducibility |
+| `--shuffle` | `False` | Shuffle test data for different examples |
 
-**Example**:
+**Examples**:
 ```bash
-# Standard attack with default epsilons
+# Standard attack (random examples each run)
 python step3_attack.py --model outputs/vgg_original_k3.pt --depth original --kernel 3
+
+# Reproducible results with seed
+python step3_attack.py --model outputs/vgg_original_k3.pt --depth original --kernel 3 --seed 42
+
+# Shuffle data to see different examples each run
+python step3_attack.py --model outputs/vgg_original_k3.pt --depth original --kernel 3 --shuffle
 
 # Custom epsilon values
 python step3_attack.py --model outputs/vgg_deep_k3.pt --depth deep --kernel 3 \
   --epsilons "0.0,0.005,0.01,0.02,0.05,0.1"
 ```
+
+**Getting Different Results Each Run**:
+- By default (no `--seed`), visualizations show random examples each run
+- Use `--shuffle` to randomize the order of test data
+- Use `--seed <number>` for reproducible results
 
 **Outputs**:
 - `outputs/attack_results_{depth}_k{kernel}.txt` - Attack summary
